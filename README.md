@@ -2,7 +2,7 @@
     <img src="https://raw.githubusercontent.com/coderofsalvation/XRHTML/master/.capture.gif"/>
 </center>
 
-> THREE/AFRAME utility to automatically render HTML as CSS3D OR WebGL, making it friendly to VR headsets.
+> HTML-objects for THREE/AFRAME which automatically render as CSS3D OR WebGL, allowing easy switching between CSS3D/VR-headset.
 
 ## Usage
 
