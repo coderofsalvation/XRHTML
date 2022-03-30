@@ -1,4 +1,8 @@
-THREE/AFRAME utility to automatically render HTML as CSS3D OR WebGL
+<center>
+    <img src="https://raw.githubusercontent.com/coderofsalvation/XRHTML/master/.capture.gif"/>
+</center>
+
+> THREE/AFRAME utility to automatically render HTML as CSS3D OR WebGL
 
 ## Usage
 
