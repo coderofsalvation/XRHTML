@@ -19,23 +19,15 @@ let html = new XRHTML({
         <br>
         <h1>Hello world</h1>
         <button>foo</button>
-        Ipsum<br>
-        Dolor<br>
-        Site<br>
-        Corpus<br>
-        Delictis<br>
-        Spiritus<br>
-      Sanctus<br>
-        Lorem<br>
-        Ipsum<br>
-        Dolor<br>
-        Site<br>
-        Corpus<br>
-        Delictis<br>
-        Spiritus<br>
-      Sanctus<br>
     </div>`,
     scene
 })
 scene.add(html)
+```
+
+## Development
+
+```sh
+$ yarn add rollup 
+$ watch rollup -c rollup.config.js 
 ```
