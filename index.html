@@ -22,7 +22,7 @@
 			import * as THREE from 'three';
 
 			import { VRButton } from 'https://unpkg.com/three@0.139.1/examples/jsm/webxr/VRButton.js';
-			import { XRHTML   } from './xrhtml.js';
+			import { XRHTML   } from './dist/xrhtml.js';
 
 			import { InteractiveGroup } from 'https://unpkg.com/three@0.139.1/examples/jsm/interactive/InteractiveGroup.js';
 			import { XRControllerModelFactory } from 'https://unpkg.com/three@0.139.1/examples/jsm/webxr/XRControllerModelFactory.js';
@@ -50,6 +50,7 @@
 
 				let vrbutton = VRButton.createButton( renderer ) 
 				vrbutton.style.zIndex = '99999'
+				vrbutton.style.background = '#555'
 				document.body.appendChild( renderer.domElement );
 				document.body.appendChild( vrbutton )
 				window.renderer = renderer
@@ -93,7 +94,7 @@
 				window.XRHTMLRenderer        = renderer
 				window.XRHTMLRefreshInterval = 100 // higher is more cpu 
 				let html = new XRHTML({
-					id: "foo",
+					name: "foo",
 					size: [500,200],
 					html: `<div style="overflow:scroll">
 						<a id="link" href="#" style="display:block;padding:10px;background:#FF0">foo</a>
@@ -117,7 +118,7 @@
 						Spiritus<br>
 					  Sanctus<br>
 					</div>`,
-					group
+					scene: group
 				})
 				html.dom.style.backgroundColor = '#EEE'
 				html.dom.style.padding = '20px'

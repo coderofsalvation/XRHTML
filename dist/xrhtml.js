@@ -689,22 +689,17 @@ class XRHTML extends THREE.Group {
   constructor(opts){
     super();
     this.opts = opts;
-    this.group = this.opts.group;
+    this.scene = this.opts.scene;
     this.dom = this.setupElement(opts);
     this.renderer = opts.renderer;
 		if( !this.renderer && typeof window != undefined ){
 			this.renderer = window.XRHTMLRenderer;
 			if( !this.renderer ) throw "XRHTML: please set 'window.XRHTMLRenderer = renderer'"
 		}
+    if( !this.scene ) throw "XRHTML: please pass scene-property as option"
     this.renderer.xr.addEventListener( 'sessionstart', () => this.update() );
     this.renderer.xr.addEventListener( 'sessionend',   () => this.update() );
     this.update();
-    this.dom.querySelector("a").addEventListener("click", () => {
-      this.dom.querySelector("a").style.backgroundColor = "#F0F";
-    });
-    this.dom.querySelector("button").addEventListener("click", () => {
-      console.log("button"); 
-    });
     return this
   }
   
@@ -712,13 +707,13 @@ class XRHTML extends THREE.Group {
     let dom = document.createElement("div");
     dom.innerHTML = opts.html;
     dom = dom.children[0];
-    dom.id = opts.id;
+    dom.id = opts.name;
     dom.style.width = opts.size[0]+'px';
     dom.style.height = opts.size[1]+'px';
     dom.style.boxSizing = 'border-box';
     dom.style.pointerEvents = 'auto';
     dom.className = "hmesh";
-    document.body.style.overflow = 'hidden';
+    if( !opts.overflow ) document.body.style.overflow = 'hidden';
     return dom
   }
 
@@ -749,13 +744,14 @@ class XRHTML extends THREE.Group {
     }
     this.CSS = new CSS3DObject(this.dom);
     this.CSS.scale.setScalar(0.001);
+    this.CSS.name = this.opts.name;
     this.add(this.CSS);
     return this
   }
 
   HTMLMesh(enable){
     if( !enable ){
-      if( this.mesh ) this.group.remove(this.mesh);
+      if( this.mesh ) this.scene.remove(this.mesh);
       return
     }
    
@@ -773,12 +769,14 @@ class XRHTML extends THREE.Group {
     this.domhide.appendChild(this.dom);
     if( !this.mesh ){
       this.mesh = new HTMLMesh(this.dom);
-     // this.mesh.material.side = THREE.DoubleSide
+      this.mesh.name = this.opts.name;
+      if( !this.opts.singleside ) this.mesh.material.side = THREE.DoubleSide;
       this.mesh.position.set( this.position.x, this.position.y, this.position.z );
       this.mesh.rotation.set( this.rotation.x, this.rotation.y, this.rotation.z );
       this.mesh.scale.set( this.scale.x, this.scale.y, this.scale.z );
+      if( !this.opts.opaque ) this.mesh.material.transparent = true;
     }
-    this.group.add(this.mesh);
+    this.scene.add(this.mesh);
     return this
   }
 
