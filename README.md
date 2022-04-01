@@ -1,6 +1,7 @@
 ## Usage
 
 ```js
+import {XRHTML} from 'https://unpkg.com/xrhtml/dist/xrhtml'
 window.XRHTMLRenderer        = renderer
 window.XRHTMLRefreshInterval = 100 // lower is more cpu 
 
@@ -23,7 +24,7 @@ scene.add(html)
     <img src="https://raw.githubusercontent.com/coderofsalvation/XRHTML/master/.capture.gif"/>
 </center>
 
-> WebXR compatible HTML-objects for THREE/AFRAME which auto-switch between CSS3D / WebGL 
+> WebXR compatible HTML-objects for THREE/AFRAME which auto-switch between CSS3D / WebGL based on xr-session events.
 
 
 ## Development

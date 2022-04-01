@@ -1,0 +1,30 @@
+{
+  "name": "xrhtml",
+  "version": "1.0.0",
+  "description": "WebXR compatible HTML-objects for THREE/AFRAME which auto-switch between CSS3D / WebGL",
+  "main": "dist/xrhtml.js",
+  "dependencies": {
+    "rollup": "^2.70.1",
+    "three": "^0.139.1"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/coderofsalvation/XRHTML.git"
+  },
+  "keywords": [
+    "webxr",
+    "three",
+    "html",
+    "css3d"
+  ],
+  "author": "coderofsalvation",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/coderofsalvation/XRHTML/issues"
+  },
+  "homepage": "https://github.com/coderofsalvation/XRHTML#readme"
+}
