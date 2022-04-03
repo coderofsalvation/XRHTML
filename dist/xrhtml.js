@@ -704,9 +704,16 @@ class XRHTML extends THREE.Group {
   }
   
   setupElement(opts){
-    let dom = document.createElement("div");
-    dom.innerHTML = opts.html;
-    dom = dom.children[0];
+    let dom;
+    if( opts.url ){
+      dom = document.createElement("iframe");
+      dom.src = opts.url;
+      dom.setAttribute("frameborder", "0");
+    }else {
+      dom = document.createElement("div");
+      dom.innerHTML = opts.html;
+      dom = dom.children[0];
+    }
     dom.id = opts.name;
     dom.style.width = opts.size[0]+'px';
     dom.style.height = opts.size[1]+'px';
@@ -767,16 +774,18 @@ class XRHTML extends THREE.Group {
       document.body.appendChild(this.domhide);
     }
     this.domhide.appendChild(this.dom);
-    if( !this.mesh ){
-      this.mesh = new HTMLMesh(this.dom);
-      this.mesh.name = this.opts.name;
-      if( !this.opts.singleside ) this.mesh.material.side = THREE.DoubleSide;
-      this.mesh.position.set( this.position.x, this.position.y, this.position.z );
-      this.mesh.rotation.set( this.rotation.x, this.rotation.y, this.rotation.z );
-      this.mesh.scale.set( this.scale.x, this.scale.y, this.scale.z );
-      if( !this.opts.opaque ) this.mesh.material.transparent = true;
-    }
-    this.scene.add(this.mesh);
+    setTimeout( () => {
+      if( !this.mesh ){
+        this.mesh = new HTMLMesh(this.dom);
+        this.mesh.name = this.opts.name;
+        if( !this.opts.singleside ) this.mesh.material.side = THREE.DoubleSide;
+        this.mesh.position.set( this.position.x, this.position.y, this.position.z );
+        this.mesh.rotation.set( this.rotation.x, this.rotation.y, this.rotation.z );
+        this.mesh.scale.set( this.scale.x, this.scale.y, this.scale.z );
+        if( !this.opts.opaque ) this.mesh.material.transparent = true;
+      }
+      this.scene.add(this.mesh);
+    }, 500 );
     return this
   }
 

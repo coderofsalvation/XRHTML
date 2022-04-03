@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { CSS3DObject, CSS3DRenderer } from './jsm/renderers/CSS3DRenderer.js';
+import { CSS3DObject, CSS3DRenderer } from './node_modules/three/examples/jsm/renderers/CSS3DRenderer.js';
 import {
 	CanvasTexture,
 	LinearFilter,
@@ -407,9 +407,16 @@ class XRHTML extends THREE.Group {
   }
   
   setupElement(opts){
-    let dom = document.createElement("div")
-    dom.innerHTML = opts.html
-    dom = dom.children[0]
+    let dom
+    if( opts.url ){
+      dom = document.createElement("iframe")
+      dom.src = opts.url
+      dom.setAttribute("frameborder", "0")
+    }else{
+      dom = document.createElement("div")
+      dom.innerHTML = opts.html
+      dom = dom.children[0]
+    }
     dom.id = opts.name
     dom.style.width = opts.size[0]+'px'
     dom.style.height = opts.size[1]+'px'

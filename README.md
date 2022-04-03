@@ -24,13 +24,14 @@ scene.add(html)
     <img src="https://raw.githubusercontent.com/coderofsalvation/XRHTML/master/.capture.gif"/>
 </center>
 
-> WebXR compatible HTML-objects for THREE/AFRAME which auto-switch between CSS3D / WebGL based on xr-session events.
-
+WebXR compatible HTML-objects for THREE/AFRAME which auto-switch between CSS3D / WebGL based on xr-session events.
+ 
+> NOTE: pass option `url: "/myiframe.html"` to render as iframe (instead of `html: "..."'`
 
 ## Development
 
 ```sh
-$ yarn add rollup 
+$ yarn add three rollup
 $ watch rollup -c rollup.config.js 
 ```
 
