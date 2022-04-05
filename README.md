@@ -26,7 +26,12 @@ scene.add(html)
 
 WebXR compatible HTML-objects for THREE/AFRAME which auto-switch between CSS3D / WebGL based on xr-session events.
  
-> NOTE: pass option `url: "/myiframe.html"` to render as iframe (instead of `html: "..."'`
+## options 
+
+| prop | type | example value | info |
+|-|-|-|-|
+| `url` | string | `/myiframe.html` | renders iframe (overrules html-prop |
+| `css` | object | `{ 'overflow-y':'scroll' }` | pass css properties to container-div/iframe |
 
 ## Development
 

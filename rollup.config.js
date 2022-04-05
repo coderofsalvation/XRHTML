@@ -1,7 +1,8 @@
 export default {
   input: 'xrhtml.js', 
-  output: {
+  external: ['three'],
+  output: [{
     file: 'dist/xrhtml.js', 
     format: 'es'
-  }
+  }]
 };

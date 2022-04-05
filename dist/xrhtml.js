@@ -308,9 +308,9 @@ class CSS3DRenderer {
 
 class HTMLMesh extends Mesh {
 
-	constructor( dom ) {
+	constructor( dom,opts ) {
 
-		const texture = new HTMLTexture( dom );
+		const texture = new HTMLTexture( dom, opts );
 
 		const geometry = new PlaneGeometry( texture.image.width * 0.001, texture.image.height * 0.001 );
 		const material = new MeshBasicMaterial( { map: texture, toneMapped: false } );
@@ -348,11 +348,12 @@ class HTMLMesh extends Mesh {
 
 class HTMLTexture extends CanvasTexture {
 
-	constructor( dom ) {
+	constructor( dom,opts ) {
 
-		super( html2canvas( dom ) );
+		super( html2canvas( dom, opts ) );
 
 		this.dom = dom;
+		this.opts = opts;
 		this.refreshInterval = 64; 
 		if( typeof window != 'undefined' && window.XRHTMLRefreshInterval )
 			this.refreshInterval = window.XRHTMLRefreshInterval; 
@@ -392,7 +393,7 @@ class HTMLTexture extends CanvasTexture {
 
 	update() {
 
-		this.image = html2canvas( this.dom );
+		this.image = html2canvas( this.dom, this.opts );
 		this.needsUpdate = true;
 
 		this.scheduleUpdate = null;
@@ -420,8 +421,11 @@ class HTMLTexture extends CanvasTexture {
 
 const canvases = new WeakMap();
 
-function html2canvas( element ) {
-
+function html2canvas( element, opts ) {
+	opts = Object.assign({
+		scrollX:0,
+		scrollY:0 
+	},opts || {});
 	const range = document.createRange();
 
 	function Clipper( context ) {
@@ -532,26 +536,33 @@ function html2canvas( element ) {
 
 			const rect = range.getBoundingClientRect();
 
-			x = rect.left - offset.left - 0.5;
-			y = rect.top - offset.top - 0.5;
-			width = rect.width;
-			height = rect.height;
+			x = rect.left - offset.left - 0.5 - opts.scrollX;
+			y = rect.top - offset.top - 0.5 - opts.scrollY;
+			width = rect.width + opts.scrollX;
+			height = rect.height + opts.scrollY;
 
 			drawText( style, x, y, element.nodeValue.trim() );
 
-		} else if ( element.nodeType === Node.COMMENT_NODE ) {
+		} else if ( element.nodeType === Node.COMMENT_NODE || element.tagName == "SCRIPT" ) {
 
 			return;
 
-		} else if ( element instanceof HTMLCanvasElement ) {
+		} else if ( element instanceof HTMLCanvasElement || element.tagName == "IMG") {
 
 			// Canvas element
 			if ( element.style.display === 'none' ) return;
 
+			const rect = element.getBoundingClientRect();
+
+			x = rect.left - offset.left - 0.5 - opts.scrollX;
+			y = rect.top - offset.top - 0.5 - opts.scrollY;
+			width = rect.width + opts.scrollX;
+			height = rect.height + opts.scrollY;
+
 			context.save();
 			const dpr = window.devicePixelRatio;
 			context.scale(1/dpr, 1/dpr);
-			context.drawImage(element, 0, 0 );
+			context.drawImage(element, x, y, width, height );
 			context.restore();
 
 		} else {
@@ -560,10 +571,10 @@ function html2canvas( element ) {
 
 			const rect = element.getBoundingClientRect();
 
-			x = rect.left - offset.left - 0.5;
-			y = rect.top - offset.top - 0.5;
-			width = rect.width;
-			height = rect.height;
+			x = rect.left - offset.left - 0.5 - opts.scrollX;
+			y = rect.top - offset.top - 0.5 - opts.scrollY;
+			width = rect.width + opts.scrollX;
+			height = rect.height + opts.scrollY;
 
 			style = window.getComputedStyle( element );
 
@@ -697,9 +708,9 @@ class XRHTML extends THREE.Group {
 			if( !this.renderer ) throw "XRHTML: please set 'window.XRHTMLRenderer = renderer'"
 		}
     if( !this.scene ) throw "XRHTML: please pass scene-property as option"
-    this.renderer.xr.addEventListener( 'sessionstart', () => this.update() );
-    this.renderer.xr.addEventListener( 'sessionend',   () => this.update() );
-    this.update();
+    this.renderer.xr.addEventListener( 'sessionstart', () => this.init() );
+    this.renderer.xr.addEventListener( 'sessionend',   () => this.init() );
+    this.init();
     return this
   }
   
@@ -708,7 +719,11 @@ class XRHTML extends THREE.Group {
     if( opts.url ){
       dom = document.createElement("iframe");
       dom.src = opts.url;
+			dom.style.backgroundColor = 'transparent';
       dom.setAttribute("frameborder", "0");
+			dom.setAttribute("allowtransparency","true");
+			dom.setAttribute("allowfullscreen","yes");
+			dom.setAttribute("allowvr","yes");
     }else {
       dom = document.createElement("div");
       dom.innerHTML = opts.html;
@@ -723,10 +738,20 @@ class XRHTML extends THREE.Group {
     if( !opts.overflow ) document.body.style.overflow = 'hidden';
     return dom
   }
+	
+	update(){
+		let compensate = 0.001;
+    if( this.CSS )
+			this.CSS.scale.set( this.scale.x * compensate, this.scale.y * compensate, this.scale.z * compensate );
+		if( this.mesh )
+			this.mesh.scale.set( this.scale.x , this.scale.y , this.scale.z  );
+	}
 
-  update(){
-    this.dom.remove(); // remove (wherever) from dom
+  init(){
+    //this.dom.remove() // remove (wherever) from dom
     this.renderer.domElement.style.zIndex = -1; // always show css over canvas
+		if( this.opts.css )
+			for( let i in this.opts.css ) this.getrealDOM().style[i] = this.opts.css[i];
     setTimeout( () => {
 			this.renderer.xr.isPresenting ? this.HTMLMesh(true) : this.CSS3D(true);
 			this.dispatchEvent("mode", this.renderer.xr.isPresenting);
@@ -735,30 +760,34 @@ class XRHTML extends THREE.Group {
 
   CSS3D(enable){
     if( !enable ){
-      if( this.CSS) this.remove(this.CSS);
-      this.dom.style.transform = "initial";
+			this.dom.style.visibility = 'hidden';
       return
     }
 
+		this.dom.style.visibility = 'visible';
     this.HTMLMesh(false);
     if( !this.renderer.CSS3D ){
-      this.renderer.domElement.style.position = 'absolute';
-      this.renderer.domElement.style.top      = '0px';
       this.renderer.CSS3D = new CSS3DRenderer({});
-      this.renderer.CSS3D.domElement;
+      let dom = this.renderer.CSS3D.domElement;
+      dom.style.position = this.renderer.domElement.style.position = 'absolute';
+      dom.style.top      = this.renderer.domElement.style.top      = '0px';
+      this.renderer.domElement.style.zIndex = 1; 
+			dom.style.zIndex = 100;
+			dom.style.pointerEvents = "none";
       document.body.appendChild( this.renderer.CSS3D.domElement );
       this.monkeyPatchRenderer();
     }
     this.CSS = new CSS3DObject(this.dom);
     this.CSS.scale.setScalar(0.001);
     this.CSS.name = this.opts.name;
+		this.update();
     this.add(this.CSS);
     return this
   }
 
   HTMLMesh(enable){
     if( !enable ){
-      if( this.mesh ) this.scene.remove(this.mesh);
+      if( this.mesh ) this.remove(this.mesh);
       return
     }
    
@@ -773,21 +802,33 @@ class XRHTML extends THREE.Group {
       this.domhide.style.visibility = 'hidden';
       document.body.appendChild(this.domhide);
     }
-    this.domhide.appendChild(this.dom);
-    setTimeout( () => {
-      if( !this.mesh ){
-        this.mesh = new HTMLMesh(this.dom);
-        this.mesh.name = this.opts.name;
-        if( !this.opts.singleside ) this.mesh.material.side = THREE.DoubleSide;
-        this.mesh.position.set( this.position.x, this.position.y, this.position.z );
-        this.mesh.rotation.set( this.rotation.x, this.rotation.y, this.rotation.z );
-        this.mesh.scale.set( this.scale.x, this.scale.y, this.scale.z );
-        if( !this.opts.opaque ) this.mesh.material.transparent = true;
-      }
-      this.scene.add(this.mesh);
-    }, 500 );
+		let opts = {
+			scrollX: this.dom.contentWindow.scrollX,
+			scrollY: this.dom.contentWindow.scrollY
+		};
+		if( this.mesh ) this.mesh.dispose();
+		this.mesh = new HTMLMesh( this.capture(), opts );
+		this.mesh.name = this.opts.name;
+		if( !this.opts.singleside ) this.mesh.material.side = THREE.DoubleSide;
+		if( !this.opts.opaque ) this.mesh.material.transparent = true;
+		this.update();
+		this.add(this.mesh);
     return this
   }
+
+	getrealDOM(){
+		return this.dom.tagName == "IFRAME" && this.dom.contentDocument ? this.dom.contentDocument.body : this.dom 
+	}
+
+	capture(){
+		let dom = this.getrealDOM();
+		if( this.dom.tagName != "IFRAME" ) return dom
+		// freeze viewport 
+		dom.style.overflow = 'hidden';
+		dom.style.height   = this.dom.style.height; 
+		dom.style.width   = this.dom.style.width; 
+		return dom
+	}
 
   monkeyPatchRenderer(){
     let size = new THREE.Vector2();
@@ -801,8 +842,8 @@ class XRHTML extends THREE.Group {
       setSize(w,h);
       this.renderer.CSS3D.setSize(w,h);
     };
-    renderer.getSize(size);
-    renderer.setSize(size.x,size.y);
+    this.renderer.getSize(size);
+    this.renderer.setSize(size.x,size.y);
   }
 
 }
