@@ -24,9 +24,9 @@ scene.add(html)
     <img src="https://raw.githubusercontent.com/coderofsalvation/XRHTML/master/.capture.gif"/>
 </center>
 
-WebXR compatible HTML-objects for THREE/AFRAME which auto-switch between CSS3D / WebGL based on xr-session events.
+WebXR compatible HTML-objects for THREE/AFRAME which auto-switch between CSS3D / WebGL based on xr-session events (entering/leaving VR).
  
-## options 
+## initialisation properties 
 
 | prop | type | example value | info |
 |-|-|-|-|
@@ -35,6 +35,14 @@ WebXR compatible HTML-objects for THREE/AFRAME which auto-switch between CSS3D /
 | `html`  | string | `<h1>hello</h1>` | html to display |
 | `url` | string | `/myiframe.html` | renders iframe (overrules html-prop |
 | `css` | object | `{ 'overflow-y':'scroll' }` | pass css properties to container-div/iframe |
+
+## functions
+
+| function | info |
+|-|-|
+| `html.dispose()` | removes dom-object from dom and disposes canvas/texture etc |
+
+> NOTE: iframe content is fully supported, however you'll run into (same-origin) trouble when not served from same server (you don't want that anyways).
 
 ## Development
 

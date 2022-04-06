@@ -803,8 +803,8 @@ class XRHTML extends THREE.Group {
       document.body.appendChild(this.domhide);
     }
 		let opts = {
-			scrollX: this.dom.contentWindow.scrollX,
-			scrollY: this.dom.contentWindow.scrollY
+      scrollX: this.dom.tagName == "IFRAME" ? this.dom.contentWindow.scrollX : 0, 
+			scrollY: this.dom.tagName == "IFRAME" ? this.dom.contentWindow.scrollY : 0
 		};
 		if( this.mesh ) this.mesh.dispose();
 		this.mesh = new HTMLMesh( this.capture(), opts );
@@ -845,6 +845,11 @@ class XRHTML extends THREE.Group {
     this.renderer.getSize(size);
     this.renderer.setSize(size.x,size.y);
   }
+
+	dispose(){
+		if( this.dom  ) this.dom.remove();
+		if( this.mesh ) this.mesh.dispose();
+	}
 
 }
 
