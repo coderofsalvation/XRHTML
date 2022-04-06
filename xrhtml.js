@@ -437,7 +437,7 @@ class XRHTML extends THREE.Group {
     dom.style.height = opts.size[1]+'px'
     dom.style.boxSizing = 'border-box'
     dom.style.pointerEvents = 'auto'
-    dom.className = "hmesh"
+    dom.className = `${dom.className} hmesh`
     if( !opts.overflow ) document.body.style.overflow = 'hidden'
     return dom
   }
