@@ -422,7 +422,6 @@ class XRHTML extends THREE.Group {
     if( opts.url ){
       dom = document.createElement("iframe")
       dom.src = opts.url
-			dom.style.backgroundColor = 'transparent'
       dom.setAttribute("frameborder", "0")
 			dom.setAttribute("allowtransparency","true")
 			dom.setAttribute("allowfullscreen","yes")
@@ -437,7 +436,7 @@ class XRHTML extends THREE.Group {
     dom.style.height = opts.size[1]+'px'
     dom.style.boxSizing = 'border-box'
     dom.style.pointerEvents = 'auto'
-    dom.className = "hmesh"
+    dom.className = (dom.className||"") + " hmesh"
     if( !opts.overflow ) document.body.style.overflow = 'hidden'
     return dom
   }
