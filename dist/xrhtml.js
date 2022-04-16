@@ -824,6 +824,11 @@ function toCanvas(node, options = {}) {
         });
     });
 }
+function toPng(node, options = {}) {
+    return __awaiter(this, void 0, void 0, function* () {
+        return toCanvas(node, options).then((canvas) => canvas.toDataURL());
+    });
+}
 
 /**
  * Based on http://www.emagix.net/academic/mscs-project/item/camera-sync-with-css3-and-webgl-threejs
@@ -1130,6 +1135,8 @@ class CSS3DRenderer {
 
 }
 
+window.toPng = toPng;
+
 class HTMLMesh extends Mesh {
 
 	constructor( dom,opts, canvas ) {
@@ -1173,7 +1180,6 @@ class HTMLMesh extends Mesh {
 class HTMLTexture extends CanvasTexture {
 
 	constructor( dom,opts, canvas ) {
-    console.dir(canvas);
     super( canvas );
     this.dom = dom;
     this.opts = opts;
@@ -1356,6 +1362,7 @@ class XRHTML extends THREE.Group {
     if( !this.renderer.CSS3D ){
       this.renderer.CSS3D = new CSS3DRenderer({});
       let dom = this.renderer.CSS3D.domElement;
+      dom.setAttribute("id", "css3d");
       dom.style.position = this.renderer.domElement.style.position = 'absolute';
       dom.style.top      = this.renderer.domElement.style.top      = '0px';
       this.renderer.domElement.style.zIndex = 1; 
@@ -1403,7 +1410,7 @@ class XRHTML extends THREE.Group {
       this.update();
       this.add(this.mesh);
     })
-    .catch( (e) => { console.error("no"); console.error(e); });
+    .catch( console.error );
     return this
   }
 

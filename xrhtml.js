@@ -1,4 +1,4 @@
-import { toSvg, toCanvas } from 'html-to-image';
+import { toPng, toCanvas } from 'html-to-image';
 import * as THREE from 'three';
 import { CSS3DObject, CSS3DRenderer } from './node_modules/three/examples/jsm/renderers/CSS3DRenderer.js';
 import {
@@ -9,6 +9,8 @@ import {
 	PlaneGeometry,
 	sRGBEncoding
 } from 'three';
+
+window.toPng = toPng
 
 class HTMLMesh extends Mesh {
 
@@ -237,6 +239,7 @@ class XRHTML extends THREE.Group {
     if( !this.renderer.CSS3D ){
       this.renderer.CSS3D = new CSS3DRenderer({})
       let dom = this.renderer.CSS3D.domElement
+      dom.setAttribute("id", "css3d")
       dom.style.position = this.renderer.domElement.style.position = 'absolute'
       dom.style.top      = this.renderer.domElement.style.top      = '0px'
       this.renderer.domElement.style.zIndex = 1 
