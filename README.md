@@ -1,4 +1,4 @@
-## Usage
+## Usage THREE.js
 
 ```js
 import {XRHTML} from 'https://unpkg.com/xrhtml/dist/xrhtml'
@@ -25,6 +25,18 @@ scene.add(html)
 </center>
 
 WebXR compatible HTML-objects for THREE/AFRAME which auto-switch between CSS3D / WebGL based on xr-session events (entering/leaving VR).
+
+## Usage AFRAME
+
+```
+<script src="xrhtml.js"></script>
+<script src="xrhtml.aframe.js"></script>
+<a-entity xrhtml="name: foo">       <!-- see properties -->
+  <div style="overflow:scroll">
+    <h1>Hello world</h1>
+  </div>
+</a-entity>
+```
  
 ## initialisation properties 
 
@@ -35,6 +47,7 @@ WebXR compatible HTML-objects for THREE/AFRAME which auto-switch between CSS3D /
 | `html`  | string | `<h1>hello</h1>` | html to display |
 | `url` | string | `/myiframe.html` | renders iframe (overrules html-prop |
 | `css` | object | `{ 'overflow-y':'scroll' }` | pass css properties to container-div/iframe |
+| `class` | string | classname to attach to dom-object | |
 
 ## functions
 

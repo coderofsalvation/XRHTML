@@ -186,7 +186,8 @@ class XRHTML extends THREE.Group {
   
   setupElement(opts){
     let dom
-    if( opts.url ){
+    if( opts.dom ) dom = opts.dom
+    else if( opts.url ){
       dom = document.createElement("iframe")
       dom.src = opts.url
       dom.setAttribute("frameborder", "0")
@@ -196,14 +197,14 @@ class XRHTML extends THREE.Group {
     }else{
       dom = document.createElement("div")
       dom.innerHTML = opts.html
-      dom = dom.children[0]
+      if( dom.children.length ) dom = dom.children[0]
     }
     dom.id = opts.name
     dom.style.width = opts.size[0]+'px'
     dom.style.height = opts.size[1]+'px'
     dom.style.boxSizing = 'border-box'
     dom.style.pointerEvents = 'auto'
-    dom.className = (dom.className||"") + " hmesh"
+    dom.className = (dom.className||opts.class||"") + " hmesh"
     dom.app = this
     if( !opts.overflow ) document.body.style.overflow = 'hidden'
     return dom
