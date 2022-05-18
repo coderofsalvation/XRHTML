@@ -1317,6 +1317,9 @@ class XRHTML extends THREE.Group {
 			dom.setAttribute("allowtransparency","true");
 			dom.setAttribute("allowfullscreen","yes");
 			dom.setAttribute("allowvr","yes");
+      dom.addEventListener('load', (e) => {
+        this.dispatchEvent({type:'urlchange',message:{event:e, obj:this}});
+      });
     }else {
       dom = document.createElement("div");
       dom.innerHTML = opts.html;
@@ -1350,6 +1353,7 @@ class XRHTML extends THREE.Group {
 			this.renderer.xr.isPresenting ? this.HTMLMesh(true) : this.CSS3D(true);
 			this.dispatchEvent("mode", this.renderer.xr.isPresenting);
 		},100 );
+    this.dispatchEvent({type:'created',message:{event:'created', obj:this}});
   }
 
   CSS3D(enable){

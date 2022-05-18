@@ -49,11 +49,13 @@ WebXR compatible HTML-objects for THREE/AFRAME which auto-switch between CSS3D /
 | `css` | object | `{ 'overflow-y':'scroll' }` | pass css properties to container-div/iframe |
 | `class` | string | classname to attach to dom-object | |
 
-## functions
+## functions / events
 
 | function | info |
 |-|-|
 | `html.dispose()` | removes dom-object from dom and disposes canvas/texture etc |
+| `html.addEventListener('urlchange', alert )` | responds to iframe navigation |
+| `html.addEventListener('created', alert )` | responds to a created XRHTML object |
 
 > NOTE: iframe content is fully supported, however you'll run into (same-origin) trouble when not served from same server (you don't want that anyways).
 
