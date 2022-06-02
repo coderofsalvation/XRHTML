@@ -31,12 +31,14 @@ WebXR compatible HTML-objects for THREE/AFRAME which auto-switch between CSS3D /
 ```
 <script src="xrhtml.js"></script>
 <script src="xrhtml.aframe.js"></script>
-<a-entity xrhtml="name: foo">       <!-- see properties -->
+<a-entity id="afoo" xrhtml="name: foo">       <!-- see properties -->
   <div style="overflow:scroll">
     <h1>Hello world</h1>
   </div>
 </a-entity>
 ```
+
+> NOTE: call `$("#afoo").components.xrhtml.update()` to sync a-entity data to HTML
  
 ## initialisation properties 
 

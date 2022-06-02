@@ -229,8 +229,8 @@ class XRHTML extends THREE.Group {
     setTimeout( () => {
 			this.renderer.xr.isPresenting ? this.HTMLMesh(true) : this.CSS3D(true)
 			this.dispatchEvent("mode", this.renderer.xr.isPresenting)
+      this.dispatchEvent({type:'created',message:{event:'created', obj:this}})
 		},100 )
-    this.dispatchEvent({type:'created',message:{event:'created', obj:this}})
   }
 
   CSS3D(enable){
