@@ -31,7 +31,7 @@ WebXR compatible HTML-objects for THREE/AFRAME which auto-switch between CSS3D /
 ```
 <script src="xrhtml.js"></script>
 <script src="xrhtml.aframe.js"></script>
-<a-entity id="afoo" xrhtml="name: foo">       <!-- see properties -->
+<a-entity id="afoo" xrhtml="name: foo" style="display:none">       <!-- see properties -->
   <div style="overflow:scroll">
     <h1>Hello world</h1>
   </div>
@@ -60,6 +60,36 @@ WebXR compatible HTML-objects for THREE/AFRAME which auto-switch between CSS3D /
 | `html.addEventListener('created', alert )` | responds to a created XRHTML object |
 
 > NOTE: iframe content is fully supported, however you'll run into (same-origin) trouble when not served from same server (you don't want that anyways).
+
+## Tips
+
+AFRAME's look-controls mouse-focus can get when adding a-entity's interactively to `<a-scene>`:
+
+```js 
+let app = new XRHTML({...})
+app.addEventListener('created',  () => {
+  let lctl = $('[look-controls]').components['look-controls']
+  $('a-scene').appendChild( $('canvas.a-grab-cursor') ) // make grab-cursor last child of parent again 
+  $('canvas.a-grab-cursor').style.zIndex = 4 // bugfix: look-controls stops working (aframe sets it to -1?) 
+                                             // when appending aframe entity to dom later on
+
+  // while dragging, prevent overlaying dom-elements (iframe e.g.) stealing mouse focus
+  if( !this.patchLookControls.patched ){
+    lctl.showGrabbingCursor = ((showGrabbingCursor) => () => {
+      showGrabbingCursor()
+      let els = [...document.querySelectorAll('iframe')]
+      els.map( (i) => i.style.pointerEvents = "none" )
+    })( lctl.showGrabbingCursor.bind(lctl) )
+
+    lctl.hideGrabbingCursor = ((hideGrabbingCursor) => () => {
+      hideGrabbingCursor()
+      let els = [...document.querySelectorAll('iframe')]
+      els.map( (i) => i.style.pointerEvents = "auto" )
+    })( lctl.hideGrabbingCursor.bind(lctl) )
+    this.patchLookControls.patched = true
+  }
+})
+```
 
 ## Development
 
