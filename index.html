@@ -11,10 +11,11 @@
 		<script type="importmap">
 			{
 				"imports": {
-					"three": "https://unpkg.com/three/build/three.module.js"
+					"three": "https://unpkg.com/three@0.139.1/build/three.module.js"
 				}
 			}
 		</script>
+        <script src="https://unpkg.com/html-to-image@1.10.8/dist/html-to-image.js"></script>
 		<script src="//unpkg.com/alpinejs" defer></script>
 		<script async nobundle src="https://unpkg.com/es-module-shims@1.3.6/dist/es-module-shims.js"></script>
 		<script type="module">
@@ -22,7 +23,7 @@
 			import * as THREE from 'three';
 
 			import { VRButton } from 'https://unpkg.com/three@0.139.1/examples/jsm/webxr/VRButton.js';
-			import { XRHTML   } from './dist/xrhtml.js';
+			import { XRHTML, HTMLMesh, html2canvas } from './dist/xrhtml.es.js';
 
 			import { InteractiveGroup } from 'https://unpkg.com/three@0.139.1/examples/jsm/interactive/InteractiveGroup.js';
 			import { XRControllerModelFactory } from 'https://unpkg.com/three@0.139.1/examples/jsm/webxr/XRControllerModelFactory.js';
@@ -35,7 +36,7 @@
 
 			function init() {
 
-				scene = new THREE.Scene();
+				scene = window.scene = new THREE.Scene();
 
 				renderer = new THREE.WebGLRenderer( { antialias: true } );
 				renderer.autoClear = false;
@@ -91,12 +92,29 @@
 				cube.position.z = -1;
 				group.add( cube );
 
-				window.XRHTMLRenderer        = renderer
-				window.XRHTMLRefreshInterval = 100 // higher is more cpu 
+				XRHTML.renderer        = renderer
+				XRHTML.refreshInterval = 100 // higher is more cpu 
+
+                /*
+                 *  you can write your own html to 3d object logic here 
+                 */
+                //XRHTML.parser = (dom, opts, addObject ) => {
+                //  console.log("XHTML.parser(..)")
+                //  dom.mesh = new xrhtml.HTMLMesh( dom, opts, xrhtml.html2canvas(dom) )
+                //  addObject(dom.mesh)
+                //}
+                //XRHTML.update = (dom) => {
+                //  console.log("XRHTML.update(..)")
+                //  dom.mesh.image = xrhtml.html2canvas(dom)
+                //  dom.mesh.needsUpdate = true;
+                //  dom.mesh.scheduleUpdate = null;
+                //}
+
 				let html = new XRHTML({
 					name: "foo",
 					size: [1200,800],
 					html: `<div style="overflow:scroll">
+                    <div style="background:#999">
 						<a id="link" href="#" style="display:block;padding:10px;background:#FF0">foo</a>
 						<a id="link2" href="https://aframe.io" target="_blank" style="display:block;padding:10px;background:#FF0">foo</a>
 						<br>
@@ -117,10 +135,11 @@
 						Delictis<br>
 						Spiritus<br>
 					  Sanctus<br>
+                      </div>
 					</div>`,
-					url: '/.test/scrollbar.html',
+					//url: '/.test/scrollbar.html',
 					css: { 'overflow-y':'scroll'},
-					scene: group
+					scene: group, 
 				})
 				html.dom.style.padding = '20px'
 				html.name = "html"

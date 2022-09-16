@@ -10,8 +10,9 @@ AFRAME.registerComponent('xrhtml', {
   }, 
   init: function() {
     let scene = document.querySelector("a-scene")
-    if( !window.XRHTMLRenderer )        window.XRHTMLRenderer = scene.renderer
-    if( !window.XRHTMLRefreshInterval ) window.XRHTMLRefreshInterval = 100 // lower is more cpu 
+    const XRHTML = xrhtml.XRHTML
+    if( !XRHTML.renderer )        XRHTML.renderer = scene.renderer
+    if( !XRHTML.refreshInterval ) XRHTML.refreshInterval = 100 // lower is more cpu 
     let opts = {
       name: this.data.name || "xrhtml"+String(Math.random()).substr(3, 9), 
       size: this.data.size || [500, 200], 
@@ -21,6 +22,7 @@ AFRAME.registerComponent('xrhtml', {
     if( this.data.url ) opts.url = this.data.url
     if( this.el.innerHTML ) opts.html = this.el.innerHTML;
     this.app = this.el.app = new XRHTML(opts);
+    console.dir(this.app)
     scene.object3D.add(this.app)
     this.update()
   }, 

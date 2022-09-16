@@ -1,9 +1,16 @@
 ## Usage THREE.js
 
+Below is demonstrating the following strategy:
+
+* render HTML as CSS3D by default 
+* in VR-mode, use `parse`-function to translate html-to-X-strategy (default: html2canvas)
+
+> \* = recommended is to use the `parse`-function to translate HTML into your **own gui-code** (or image via a server, because html-to-image libraries sound great but are very errorprone)
+
 ```js
-import {XRHTML} from 'https://unpkg.com/xrhtml/dist/xrhtml'
-window.XRHTMLRenderer        = renderer
-window.XRHTMLRefreshInterval = 100 // lower is more cpu 
+import {XRHTML} from 'https://unpkg.com/xrhtml/dist/xrhtml.es.js'
+XRHTML.renderer        = renderer
+XRHTML.refreshInterval = 100 // lower is more cpu 
 
 let html = new XRHTML({
     name: "foo",
@@ -61,9 +68,29 @@ WebXR compatible HTML-objects for THREE/AFRAME which auto-switch between CSS3D /
 
 > NOTE: iframe content is fully supported, however you'll run into (same-origin) trouble when not served from same server (you don't want that anyways).
 
+## Pluggable 
+
+Override the default `html2canvas` strategy when switching to VR:
+
+```
+XRHTML.parser = (dom, opts, addObject ) => {
+  console.log("XHTML.parser(..)")
+  dom.mesh = new xrhtml.HTMLMesh( dom, opts, xrhtml.html2canvas(dom) )
+  addObject(dom.mesh)
+}
+XRHTML.update = (dom) => {
+  console.log("XRHTML.update(..)")
+  dom.mesh.image = xrhtml.html2canvas(dom)
+  dom.mesh.needsUpdate = true;
+  dom.mesh.scheduleUpdate = null;
+}
+```
+
+> For example, you can parse the HTML inside the dom-node, and translate it your own 3D interface elements.
+
 ## Tips
 
-AFRAME's look-controls mouse-focus can get when adding a-entity's interactively to `<a-scene>`:
+AFRAME's look-controls mouse-focus 'on-top'-requirement can break, when adding a-entity's interactively to `<a-scene>`:
 
 ```js 
 let app = new XRHTML({...})
@@ -95,7 +122,8 @@ app.addEventListener('created',  () => {
 
 ```sh
 $ yarn add three rollup
-$ watch rollup -c rollup.config.js 
+$ watch rollup -c rollup.config.js    // aframe / browser
+$ watch rollup -c rollup.config.es.js // threejs / rollup e.g.
 ```
 
 ## Credits

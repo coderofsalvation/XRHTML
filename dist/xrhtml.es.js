@@ -1,18 +1,315 @@
 import * as THREE from 'three';
-import { CSS3DObject, CSS3DRenderer } from './node_modules/three/examples/jsm/renderers/CSS3DRenderer.js';
-import {
-	CanvasTexture,
-	LinearFilter,
-	Mesh,
-	MeshBasicMaterial,
-	PlaneGeometry,
-	sRGBEncoding
-} from 'three';
+import { Vector3, Quaternion, Matrix4, Object3D, Mesh, PlaneGeometry, MeshBasicMaterial, CanvasTexture, sRGBEncoding, LinearFilter } from 'three';
+
+/**
+ * Based on http://www.emagix.net/academic/mscs-project/item/camera-sync-with-css3-and-webgl-threejs
+ */
+
+const _position = new Vector3();
+const _quaternion = new Quaternion();
+const _scale = new Vector3();
+
+class CSS3DObject extends Object3D {
+
+	constructor( element = document.createElement( 'div' ) ) {
+
+		super();
+
+		this.element = element;
+		this.element.style.position = 'absolute';
+		this.element.style.pointerEvents = 'auto';
+		this.element.style.userSelect = 'none';
+
+		this.element.setAttribute( 'draggable', false );
+
+		this.addEventListener( 'removed', function () {
+
+			this.traverse( function ( object ) {
+
+				if ( object.element instanceof Element && object.element.parentNode !== null ) {
+
+					object.element.parentNode.removeChild( object.element );
+
+				}
+
+			} );
+
+		} );
+
+	}
+
+	copy( source, recursive ) {
+
+		super.copy( source, recursive );
+
+		this.element = source.element.cloneNode( true );
+
+		return this;
+
+	}
+
+}
+
+CSS3DObject.prototype.isCSS3DObject = true;
+
+class CSS3DSprite extends CSS3DObject {
+
+	constructor( element ) {
+
+		super( element );
+
+		this.rotation2D = 0;
+
+	}
+
+	copy( source, recursive ) {
+
+		super.copy( source, recursive );
+
+		this.rotation2D = source.rotation2D;
+
+		return this;
+
+	}
+
+}
+
+CSS3DSprite.prototype.isCSS3DSprite = true;
+
+//
+
+const _matrix = new Matrix4();
+const _matrix2 = new Matrix4();
+
+class CSS3DRenderer {
+
+	constructor( parameters = {} ) {
+
+		const _this = this;
+
+		let _width, _height;
+		let _widthHalf, _heightHalf;
+
+		const cache = {
+			camera: { fov: 0, style: '' },
+			objects: new WeakMap()
+		};
+
+		const domElement = parameters.element !== undefined ? parameters.element : document.createElement( 'div' );
+
+		domElement.style.overflow = 'hidden';
+
+		this.domElement = domElement;
+
+		const cameraElement = document.createElement( 'div' );
+
+		cameraElement.style.transformStyle = 'preserve-3d';
+		cameraElement.style.pointerEvents = 'none';
+
+		domElement.appendChild( cameraElement );
+
+		this.getSize = function () {
+
+			return {
+				width: _width,
+				height: _height
+			};
+
+		};
+
+		this.render = function ( scene, camera ) {
+
+			const fov = camera.projectionMatrix.elements[ 5 ] * _heightHalf;
+
+			if ( cache.camera.fov !== fov ) {
+
+				domElement.style.perspective = camera.isPerspectiveCamera ? fov + 'px' : '';
+				cache.camera.fov = fov;
+
+			}
+
+			if ( scene.autoUpdate === true ) scene.updateMatrixWorld();
+			if ( camera.parent === null ) camera.updateMatrixWorld();
+
+			let tx, ty;
+
+			if ( camera.isOrthographicCamera ) {
+
+				tx = - ( camera.right + camera.left ) / 2;
+				ty = ( camera.top + camera.bottom ) / 2;
+
+			}
+
+			const cameraCSSMatrix = camera.isOrthographicCamera ?
+				'scale(' + fov + ')' + 'translate(' + epsilon( tx ) + 'px,' + epsilon( ty ) + 'px)' + getCameraCSSMatrix( camera.matrixWorldInverse ) :
+				'translateZ(' + fov + 'px)' + getCameraCSSMatrix( camera.matrixWorldInverse );
+
+			const style = cameraCSSMatrix +
+				'translate(' + _widthHalf + 'px,' + _heightHalf + 'px)';
+
+			if ( cache.camera.style !== style ) {
+
+				cameraElement.style.transform = style;
+
+				cache.camera.style = style;
+
+			}
+
+			renderObject( scene, scene, camera);
+
+		};
+
+		this.setSize = function ( width, height ) {
+
+			_width = width;
+			_height = height;
+			_widthHalf = _width / 2;
+			_heightHalf = _height / 2;
+
+			domElement.style.width = width + 'px';
+			domElement.style.height = height + 'px';
+
+			cameraElement.style.width = width + 'px';
+			cameraElement.style.height = height + 'px';
+
+		};
+
+		function epsilon( value ) {
+
+			return Math.abs( value ) < 1e-10 ? 0 : value;
+
+		}
+
+		function getCameraCSSMatrix( matrix ) {
+
+			const elements = matrix.elements;
+
+			return 'matrix3d(' +
+				epsilon( elements[ 0 ] ) + ',' +
+				epsilon( - elements[ 1 ] ) + ',' +
+				epsilon( elements[ 2 ] ) + ',' +
+				epsilon( elements[ 3 ] ) + ',' +
+				epsilon( elements[ 4 ] ) + ',' +
+				epsilon( - elements[ 5 ] ) + ',' +
+				epsilon( elements[ 6 ] ) + ',' +
+				epsilon( elements[ 7 ] ) + ',' +
+				epsilon( elements[ 8 ] ) + ',' +
+				epsilon( - elements[ 9 ] ) + ',' +
+				epsilon( elements[ 10 ] ) + ',' +
+				epsilon( elements[ 11 ] ) + ',' +
+				epsilon( elements[ 12 ] ) + ',' +
+				epsilon( - elements[ 13 ] ) + ',' +
+				epsilon( elements[ 14 ] ) + ',' +
+				epsilon( elements[ 15 ] ) +
+			')';
+
+		}
+
+		function getObjectCSSMatrix( matrix ) {
+
+			const elements = matrix.elements;
+			const matrix3d = 'matrix3d(' +
+				epsilon( elements[ 0 ] ) + ',' +
+				epsilon( elements[ 1 ] ) + ',' +
+				epsilon( elements[ 2 ] ) + ',' +
+				epsilon( elements[ 3 ] ) + ',' +
+				epsilon( - elements[ 4 ] ) + ',' +
+				epsilon( - elements[ 5 ] ) + ',' +
+				epsilon( - elements[ 6 ] ) + ',' +
+				epsilon( - elements[ 7 ] ) + ',' +
+				epsilon( elements[ 8 ] ) + ',' +
+				epsilon( elements[ 9 ] ) + ',' +
+				epsilon( elements[ 10 ] ) + ',' +
+				epsilon( elements[ 11 ] ) + ',' +
+				epsilon( elements[ 12 ] ) + ',' +
+				epsilon( elements[ 13 ] ) + ',' +
+				epsilon( elements[ 14 ] ) + ',' +
+				epsilon( elements[ 15 ] ) +
+			')';
+
+			return 'translate(-50%,-50%)' + matrix3d;
+
+		}
+
+		function renderObject( object, scene, camera, cameraCSSMatrix ) {
+
+			if ( object.isCSS3DObject ) {
+
+				const visible = ( object.visible === true ) && ( object.layers.test( camera.layers ) === true );
+				object.element.style.display = ( visible === true ) ? '' : 'none';
+
+				if ( visible === true ) {
+
+					object.onBeforeRender( _this, scene, camera );
+
+					let style;
+
+					if ( object.isCSS3DSprite ) {
+
+						// http://swiftcoder.wordpress.com/2008/11/25/constructing-a-billboard-matrix/
+
+						_matrix.copy( camera.matrixWorldInverse );
+						_matrix.transpose();
+
+						if ( object.rotation2D !== 0 ) _matrix.multiply( _matrix2.makeRotationZ( object.rotation2D ) );
+
+						object.matrixWorld.decompose( _position, _quaternion, _scale );
+						_matrix.setPosition( _position );
+						_matrix.scale( _scale );
+
+						_matrix.elements[ 3 ] = 0;
+						_matrix.elements[ 7 ] = 0;
+						_matrix.elements[ 11 ] = 0;
+						_matrix.elements[ 15 ] = 1;
+
+						style = getObjectCSSMatrix( _matrix );
+
+					} else {
+
+						style = getObjectCSSMatrix( object.matrixWorld );
+
+					}
+
+					const element = object.element;
+					const cachedObject = cache.objects.get( object );
+
+					if ( cachedObject === undefined || cachedObject.style !== style ) {
+
+						element.style.transform = style;
+
+						const objectData = { style: style };
+						cache.objects.set( object, objectData );
+
+					}
+
+					if ( element.parentNode !== cameraElement ) {
+
+						cameraElement.appendChild( element );
+
+					}
+
+					object.onAfterRender( _this, scene, camera );
+
+				}
+
+			}
+
+			for ( let i = 0, l = object.children.length; i < l; i ++ ) {
+
+				renderObject( object.children[ i ], scene, camera);
+
+			}
+
+		}
+
+	}
+
+}
 
 class HTMLMesh extends Mesh {
 
 	constructor( dom,opts, canvas ) {
-		const texture = new HTMLTexture( dom, opts, canvas )
+		const texture = new HTMLTexture( dom, opts, canvas );
 
 		const geometry = new PlaneGeometry( texture.image.width * 0.001, texture.image.height * 0.001 );
 		const material = new MeshBasicMaterial( { map: texture, toneMapped: false } );
@@ -52,12 +349,12 @@ class HTMLMesh extends Mesh {
 class HTMLTexture extends CanvasTexture {
 
 	constructor( dom,opts, canvas ) {
-    super( canvas )
+    super( canvas );
     this.dom = dom;
     this.opts = opts;
-    this.refreshInterval = 64 
+    this.refreshInterval = 64; 
     if( typeof window != 'undefined' && XRHTML.refreshInterval )
-      this.refreshInterval = XRHTML.refreshInterval 
+      this.refreshInterval = XRHTML.refreshInterval; 
     this.anisotropy = 16;
     this.encoding = sRGBEncoding;
     this.minFilter = LinearFilter;
@@ -93,7 +390,7 @@ class HTMLTexture extends CanvasTexture {
 	}
 
 	async update() {
-    XRHTML.update( this.dom )
+    XRHTML.update( this.dom );
 	}
 
 	dispose() {
@@ -158,130 +455,130 @@ function htmlevent( element, event, x, y ) {
 class XRHTML extends THREE.Group {
 
   constructor(opts){
-    super()
-    this.opts = opts
-    this.scene = this.opts.scene
-    this.dom = this.setupElement(opts)
-    this.renderer = opts.renderer
+    super();
+    this.opts = opts;
+    this.scene = this.opts.scene;
+    this.dom = this.setupElement(opts);
+    this.renderer = opts.renderer;
 		if( !this.renderer && typeof window != undefined ){
-			this.renderer = XRHTML.renderer
+			this.renderer = XRHTML.renderer;
 			if( !this.renderer ) throw "XRHTML: please set 'XRHTML.renderer = renderer'"
 		}
     if( !this.scene ) throw "XRHTML: please pass scene-property as option"
-    this.renderer.xr.addEventListener( 'sessionstart', () => this.init() )
-    this.renderer.xr.addEventListener( 'sessionend',   () => this.init() )
-    this.init()
+    this.renderer.xr.addEventListener( 'sessionstart', () => this.init() );
+    this.renderer.xr.addEventListener( 'sessionend',   () => this.init() );
+    this.init();
     return this
   }
   
   setupElement(opts){
-    let dom
-    if( opts.dom ) dom = opts.dom
+    let dom;
+    if( opts.dom ) dom = opts.dom;
     else if( opts.url ){
-      dom = document.createElement("iframe")
-      dom.src = opts.url
-      dom.setAttribute("frameborder", "0")
-			dom.setAttribute("allowtransparency","true")
-			dom.setAttribute("allowfullscreen","yes")
-			dom.setAttribute("allowvr","yes")
+      dom = document.createElement("iframe");
+      dom.src = opts.url;
+      dom.setAttribute("frameborder", "0");
+			dom.setAttribute("allowtransparency","true");
+			dom.setAttribute("allowfullscreen","yes");
+			dom.setAttribute("allowvr","yes");
       dom.addEventListener('load', (e) => {
-        this.dispatchEvent({type:'urlchange',message:{event:e, obj:this}})
-      })
-    }else{
-      dom = document.createElement("div")
-      dom.innerHTML = opts.html
-      if( dom.children.length ) dom = dom.children[0]
+        this.dispatchEvent({type:'urlchange',message:{event:e, obj:this}});
+      });
+    }else {
+      dom = document.createElement("div");
+      dom.innerHTML = opts.html;
+      if( dom.children.length ) dom = dom.children[0];
     }
-    dom.id = opts.name
-    dom.style.width = opts.size[0]+'px'
-    dom.style.height = opts.size[1]+'px'
-    dom.style.boxSizing = 'border-box'
-    dom.style.pointerEvents = 'auto'
-    dom.className = (dom.className||opts.class||"") + " hmesh"
-    dom.app = this
-    if( !opts.overflow ) document.body.style.overflow = 'hidden'
+    dom.id = opts.name;
+    dom.style.width = opts.size[0]+'px';
+    dom.style.height = opts.size[1]+'px';
+    dom.style.boxSizing = 'border-box';
+    dom.style.pointerEvents = 'auto';
+    dom.className = (dom.className||opts.class||"") + " hmesh";
+    dom.app = this;
+    if( !opts.overflow ) document.body.style.overflow = 'hidden';
     return dom
   }
 	
 	update(){
-		let compensate = 0.001
+		let compensate = 0.001;
     if( this.CSS )
-			this.CSS.scale.set( this.scale.x * compensate, this.scale.y * compensate, this.scale.z * compensate )
+			this.CSS.scale.set( this.scale.x * compensate, this.scale.y * compensate, this.scale.z * compensate );
 		if( this.mesh )
-			this.mesh.scale.set( this.scale.x , this.scale.y , this.scale.z  )
+			this.mesh.scale.set( this.scale.x , this.scale.y , this.scale.z  );
 	}
 
   init(){
     //this.dom.remove() // remove (wherever) from dom
-    this.renderer.domElement.style.zIndex = -1 // always show css over canvas
+    this.renderer.domElement.style.zIndex = -1; // always show css over canvas
 		if( this.opts.css )
-			for( let i in this.opts.css ) this.getRealDOM().style[i] = this.opts.css[i]
+			for( let i in this.opts.css ) this.getRealDOM().style[i] = this.opts.css[i];
     setTimeout( () => {
-			this.renderer.xr.isPresenting ? this.VR(true) : this.CSS3D(true)
-			this.dispatchEvent("mode", this.renderer.xr.isPresenting)
-      this.dispatchEvent({type:'created',message:{event:'created', obj:this}})
-		},100 )
+			this.renderer.xr.isPresenting ? this.VR(true) : this.CSS3D(true);
+			this.dispatchEvent("mode", this.renderer.xr.isPresenting);
+      this.dispatchEvent({type:'created',message:{event:'created', obj:this}});
+		},100 );
   }
 
   CSS3D(enable){
     if( !enable ){
-			this.dom.style.visibility = 'hidden'
+			this.dom.style.visibility = 'hidden';
       return
     }
 
-		this.dom.style.visibility = 'visible'
-    this.VR(false)
+		this.dom.style.visibility = 'visible';
+    this.VR(false);
     if( !this.renderer.CSS3D ){
-      this.renderer.CSS3D = new CSS3DRenderer({})
-      let dom = this.renderer.CSS3D.domElement
-      dom.setAttribute("id", "css3d")
-      dom.style.position = this.renderer.domElement.style.position = 'absolute'
-      dom.style.top      = this.renderer.domElement.style.top      = '0px'
-      this.renderer.domElement.style.zIndex = 1 
-			dom.style.zIndex = 100
-			dom.style.pointerEvents = "none"
-      document.body.appendChild( this.renderer.CSS3D.domElement )
-      this.monkeyPatchRenderer()
+      this.renderer.CSS3D = new CSS3DRenderer({});
+      let dom = this.renderer.CSS3D.domElement;
+      dom.setAttribute("id", "css3d");
+      dom.style.position = this.renderer.domElement.style.position = 'absolute';
+      dom.style.top      = this.renderer.domElement.style.top      = '0px';
+      this.renderer.domElement.style.zIndex = 1; 
+			dom.style.zIndex = 100;
+			dom.style.pointerEvents = "none";
+      document.body.appendChild( this.renderer.CSS3D.domElement );
+      this.monkeyPatchRenderer();
     }
-    this.CSS = new CSS3DObject(this.dom)
-    this.CSS.scale.setScalar(0.001)
-    this.CSS.name = this.opts.name
-		this.update()
-    this.add(this.CSS)
+    this.CSS = new CSS3DObject(this.dom);
+    this.CSS.scale.setScalar(0.001);
+    this.CSS.name = this.opts.name;
+		this.update();
+    this.add(this.CSS);
     return this
   }
 
   VR(enable){
     if( !enable ){
-      if( this.mesh ) this.remove(this.mesh)
+      if( this.mesh ) this.remove(this.mesh);
       return
     }
     // now hide dom
-    this.CSS3D(false)
-    this.renderer.domElement.style.zIndex = 999 // always show canvas over css
+    this.CSS3D(false);
+    this.renderer.domElement.style.zIndex = 999; // always show canvas over css
    
     if( !this.domhide ){
-      this.domhide = document.createElement("div")
-      this.domhide.id = "domhide"
-      this.domhide.style.position = 'absolute'
-      this.domhide.style.top = '0px'
-      this.domhide.style.left = '0px'
-      this.domhide.style.visibility = 'hidden'
-      document.body.appendChild(this.domhide)
+      this.domhide = document.createElement("div");
+      this.domhide.id = "domhide";
+      this.domhide.style.position = 'absolute';
+      this.domhide.style.top = '0px';
+      this.domhide.style.left = '0px';
+      this.domhide.style.visibility = 'hidden';
+      document.body.appendChild(this.domhide);
     }
-		if( this.mesh ) this.mesh.dispose()
+		if( this.mesh ) this.mesh.dispose();
 
     if( !XRHTML.parser ) throw 'XRHTML: {..., parser} parser-function was not passed as option' 
     XRHTML.parser( this.getRealDOM(), this.getRealOptions(), (object3D) => {
       if( !object3D ) return 
-      console.log("adding mesh")
-      this.mesh = object3D
-      this.mesh.name = this.opts.name
-      if( !this.opts.singleside ) this.mesh.material.side = THREE.DoubleSide
-      if( !this.opts.opaque ) this.mesh.material.transparent = true
-      this.add(this.mesh)
-      this.update()
-    })
+      console.log("adding mesh");
+      this.mesh = object3D;
+      this.mesh.name = this.opts.name;
+      if( !this.opts.singleside ) this.mesh.material.side = THREE.DoubleSide;
+      if( !this.opts.opaque ) this.mesh.material.transparent = true;
+      this.add(this.mesh);
+      this.update();
+    });
     return this
   }
 
@@ -297,38 +594,38 @@ class XRHTML extends THREE.Group {
 	}
 
   monkeyPatchRenderer(){
-    let size = new THREE.Vector2()
-    let render  = this.renderer.render.bind(this.renderer)
-    let setSize = this.renderer.setSize.bind(this.renderer)
+    let size = new THREE.Vector2();
+    let render  = this.renderer.render.bind(this.renderer);
+    let setSize = this.renderer.setSize.bind(this.renderer);
     this.renderer.render = (scene,camera) => {
-      render(scene,camera)
-      if( !this.renderer.xr.isPresenting ) this.renderer.CSS3D.render(scene,camera)
-    }
+      render(scene,camera);
+      if( !this.renderer.xr.isPresenting ) this.renderer.CSS3D.render(scene,camera);
+    };
     this.renderer.setSize = (w,h) => {
-      setSize(w,h)
-      this.renderer.CSS3D.setSize(w,h)
-    }
-    this.renderer.getSize(size)
-    this.renderer.setSize(size.x,size.y)
+      setSize(w,h);
+      this.renderer.CSS3D.setSize(w,h);
+    };
+    this.renderer.getSize(size);
+    this.renderer.setSize(size.x,size.y);
   }
 
 	dispose(){
-		if( this.dom  ) this.dom.remove()
-		if( this.mesh ) this.mesh.dispose()
+		if( this.dom  ) this.dom.remove();
+		if( this.mesh ) this.mesh.dispose();
 	}
 
 }
 
 // default html2canvas parser
 XRHTML.parser = (dom, opts, addObject ) => {
-  dom.mesh = new HTMLMesh( dom, opts, html2canvas(dom) )
-  addObject(dom.mesh)
-}
+  dom.mesh = new HTMLMesh( dom, opts, html2canvas(dom) );
+  addObject(dom.mesh);
+};
 XRHTML.update = (dom) => {
-  dom.mesh.image = html2canvas(dom)
+  dom.mesh.image = html2canvas(dom);
   dom.mesh.needsUpdate = true;
   dom.mesh.scheduleUpdate = null;
-}
+};
 
 function html2canvas( element ) {
 
@@ -707,4 +1004,4 @@ function html2canvas( element ) {
 
 }
 
-export { XRHTML, HTMLMesh, HTMLTexture, html2canvas }
+export { HTMLMesh, HTMLTexture, XRHTML, html2canvas };
