@@ -2,7 +2,7 @@
   <head>
     <!--<script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>-->
     <script src="https://binzume.github.io/aframe/dist/aframe-master.min.js"></script>
-    <script src="https://unpkg.com/aframe-xylayout@0.0.1/dist/xylayout-all.js"></script>
+      <script src="aframe-xylayout/dist/xylayout-all.js"></script>
     <script src="dist/xrhtml.js"></script>
     <script src="xrhtml.aframe.js"></script>
     <script>
@@ -23,88 +23,58 @@
             }
           }, 
 
-          xylayout:{
+          "html2aframe":{
+
+            update: (dom) => { /* do stuff here */ }, 
 
             parser: (dom, opts, addObject ) => {
 
-              const nodes = {
+              const tags = {
                 "H1": (node, parent, forceTag) => {
-                  let el = nodes.dom2xylayout(node, parent, "text")
-                  el.setAttribute("value", node.innerText )
-                  return el
-                }, 
-                "LI": (node, parent, forceTag) => {
-                  let el = nodes.dom2xylayout(node, parent, "plane")
-                  el.setAttribute("value", node.innerText )
-                  el.setAttribute("xyrect",{})
-                  el.setAttribute("xylabel",`value: foo bar`)
-                  return el
-                }, 
-                "OL" : (node,  parent,  forceTag) => nodes.dom2xylayout(node, parent ), 
-                "UL" : (node,  parent,  forceTag) => nodes.dom2xylayout(node, parent ), 
-                "DIV": (node,  parent,  forceTag) => nodes.dom2xylayout(node, parent ), 
-
-                "dom2xylayout": (node, parent, forceTag) => { 
-                  if( !node.getAttributeNames ) return // skip nontags
-                  let tagName = forceTag || String(node.className).split(" ").find( (c) => c.substr(0,2) == "xy" ? c : undefined )
-                  if( !tagName ) tagName = 'entity' 
-                  let el = document.createElement(`a-${tagName}`)
-                  let ignoreAttr = ['style']
+                  let el = document.createElement("a-text")
+                        console.dir(node)
+                  el.setAttribute("value", node.innerHTML+" " )
                   // copy attributes
                   for ( var i in node.attributes ) 
-                    if( node.attributes[i].nodeName && !~ignoreAttr.indexOf(node.attributes[i].nodeName) )
-                      el.setAttribute( node.attributes[i].nodeName,  node.attributes[i].nodeValue )
+                    if( node.attributes[i].nodeName )
+                      el.setAttribute( node.attributes[i].nodeName,   node.attributes[i].nodeValue )
                   if( parent ) parent.appendChild(el)
                   return el
-                }         
+                }, 
+                "*": (node, parent, forceTag) => document.createElement("a-entity")
               }
-              const classToXYLayout = (className) => String(className)
-                                                     .split(" ")
-                                                     .map( (c) => c.substr(0,2) == "xy" )
 
               function walkDOM(node, parent) {
-                  let nodeFunc = nodes[node.tagName] || nodes.dom2xylayout
-                  console.dir({tagName:node.tagName, nodeFunc})
-                  if( !nodeFunc ) return parent
-                  let newparent = nodeFunc(node, parent) || parent;
+                  let nodeFunc = tags[node.tagName] || tags["*"]
+                  if( parent ) parent.appendChild( nodeFunc(node, parent) )
+                  else parent = nodeFunc(node, parent)
                   node = node.firstChild;
                   while (node) {
-                      walkDOM(node, newparent);
+                      walkDOM(node, parent);
                       node = node.nextSibling;
                   }
-                  return newparent
+                  return parent
               }
               let aEntity = walkDOM(dom)
-              console.log( aEntity.outerHTML )
+              aEntity.setAttribute('position', dom.app.position )
               document.querySelector("a-scene").appendChild(aEntity)
-            }, 
-
-            update: (dom) => {
-
-            }
+            } 
           }
         }
 
-        let parser = "xylayout" //"html2canvas"
+        let parser = "html2aframe" //"html2canvas"
         XRHTML.parser = parsers[parser].parser
         XRHTML.update = parsers[parser].update 
     </script>
   </head>
   <body>
     <a-scene>
-      <a-entity position="0 1.6 -0.6" id="afoo" xrhtml="name: foo" style="display:none">       <!-- see properties -->
-        <div style="overflow:hidden" class="xywindow" position="0 0 -1" width="4" height="5" title="hello world">
-            <!--
-          <div class="xyscroll" width=4 height=5>
-            <ol xylist="">
-              <li width="4" height="1">one</li>
-              <li width="4" height="1">two</li>
-              <li width="4" height="1">three</li>
-            </ol>
-          </div>
-            -->
+      <a-entity position="0 1.6 -0.6" xrhtml="name: foo" style="display:none">
+        <div style="overflow:hidden" id="afoo">
+          <h1 style="font-size:60px" scale="0.3 0.3 0.3" align="center" color="#000">Hello world</h1>
         </div>
       </a-entity>
+
       <a-box position="-1 0.5 -3" rotation="0 45 0" color="#4CC3D9"></a-box>
       <a-sphere position="0 1.25 -5" radius="1.25" color="#EF2D5E"></a-sphere>
       <a-cylinder position="1 0.75 -3" radius="0.5" height="1.5" color="#FFC65D"></a-cylinder>

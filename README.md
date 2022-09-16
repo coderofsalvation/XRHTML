@@ -38,11 +38,15 @@ WebXR compatible HTML-objects for THREE/AFRAME which auto-switch between CSS3D /
 ```
 <script src="xrhtml.js"></script>
 <script src="xrhtml.aframe.js"></script>
-<a-entity id="afoo" xrhtml="name: foo" style="display:none">       <!-- see properties -->
-  <div style="overflow:scroll">
-    <h1>Hello world</h1>
-  </div>
-</a-entity>
+<a-scene>
+  
+  <a-entity position="0 1.6 -0.6" xrhtml="name: foo" style="display:none">
+    <div style="overflow:hidden" id="afoo">
+      <h1 style="font-size:60px" scale="0.3 0.3 0.3" align="center" color="#000">Hello world</h1>
+    </div>
+  </a-entity>
+
+</a-scene>
 ```
 
 > NOTE: call `$("#afoo").components.xrhtml.update()` to sync a-entity data to HTML
@@ -122,8 +126,8 @@ app.addEventListener('created',  () => {
 
 ```sh
 $ yarn add three rollup
-$ watch rollup -c rollup.config.js    // aframe / browser
-$ watch rollup -c rollup.config.es.js // threejs / rollup e.g.
+$ watch -c rollup -c rollup.config.js    // aframe / browser
+$ watch -c rollup -c rollup.config.es.js // threejs / rollup e.g.
 ```
 
 ## Credits
