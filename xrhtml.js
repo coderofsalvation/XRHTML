@@ -277,8 +277,8 @@ class XRHTML extends THREE.Group {
       console.log("adding mesh")
       this.mesh = object3D
       this.mesh.name = this.opts.name
-      if( !this.opts.singleside ) this.mesh.material.side = THREE.DoubleSide
-      if( !this.opts.opaque ) this.mesh.material.transparent = true
+      if( !this.mesh.material && this.opts.singleside ) this.mesh.material.side = THREE.DoubleSide
+      if( !this.mesh.material && this.opts.opaque     ) this.mesh.material.transparent = true
       this.add(this.mesh)
       this.update()
     })
